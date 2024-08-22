@@ -38,17 +38,25 @@ services:
       - "5432:5432"
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d ecommerce"] 
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
   create-db:
     image: alpine:3.20.2
     container_name: init_db
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       PGPASSWORD: Admin1234
     volumes:
       - ./sql:/home
-    entrypoint: ["sh","-c","apk add postgresql&&psql -h db -d ecommerce -U admin -p 5432 -a -q -f /home/sample_data.sql"]  
+    command: >
+      sh -c "apk add postgresql&&psql -h db -d ecommerce -U admin -p 5432 -a -q -f /home/sample_data.sql"
 
   vscode:
     image: owner0220/dbt_session_devenv_code:v1.0.0 
