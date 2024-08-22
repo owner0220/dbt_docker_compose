@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  fastapi:
+    image: owner0220/dbt_session_devenv_fastapi:v1.0.0 
+    container_name: fastapi
+    ports:
+      - "8000:80"
+    volumes:
+      - ./app:/app
+    depends_on:
+      - db
+    command: >
+      sh -c "uvicorn main:app --host 0.0.0.0 --port 80"
+
+
+  locust:
+    image: locustio/locust
+    container_name: locust
+    ports:
+      - "8089:8089"
+    depends_on:
+      - fastapi
+    volumes:
+      - ./locust:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py --host=http://fastapi:80
+
+  db:
+    image: postgres:13
+    container_name: dbt_postgres
+    environment:
+      POSTGRES_USER: admin 
+      POSTGRES_PASSWORD: Admin1234
+      POSTGRES_DB: ecommerce
+      TZ: 'Asia/Seoul'
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  create-db:
+    image: alpine:3.20.2
+    container_name: init_db
+    depends_on:
+      - db
+    environment:
+      PGPASSWORD: Admin1234
+    volumes:
+      - ./sql:/home
+    entrypoint: ["sh","-c","apk add postgresql&&psql -h db -d ecommerce -U admin -p 5432 -a -q -f /home/sample_data.sql"]  
+
+  vscode:
+    image: owner0220/dbt_session_devenv_code:v1.0.0 
+    container_name: vscode-server
+    ports:
+      - "8443:8080"
+    environment:
+      PASSWORD: "1234"
+    volumes:
+      - ./vscode:/home/coder/project
+    entrypoint: ["sh","-c","/usr/bin/entrypoint.sh --bind-addr 0.0.0.0:8080"]
+  
+volumes:
+  pgdata:
+    driver: local
+

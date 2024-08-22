@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  fastapi:
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.10 
+    container_name: fastapi
+    ports:
+      - "8000:80"
+    volumes:
+      - ./app:/app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://admin:Admin1234@db:5432/ecommerce
+      - DBUSER=admin
+      - PASSWORD=Admin1234
+      - PRIMARY_HOST=db
+      - READONLY_HOST=db
+      - PRIMARY_PORT=5432
+      - READONLY_PORT=5432
+      - PRIMARY_DBNAME=ecommerce
+      - READONLY_DBNAME=ecommerce
+    command: >
+      sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 80"
+
+
+  locust:
+    image: locustio/locust
+    container_name: locust
+    ports:
+      - "8089:8089"
+    depends_on:
+      - fastapi
+    volumes:
+      - ./locust:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py --host=http://fastapi:80
+
+  db:
+    image: postgres:13
+    container_name: dbt_postgres
+    environment:
+      POSTGRES_USER: admin 
+      POSTGRES_PASSWORD: Admin1234
+      POSTGRES_DB: ecommerce
+      TZ: 'Asia/Seoul'
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  vscode:
+    image: codercom/code-server:latest
+    container_name: vscode-server
+    ports:
+      - "8443:8080"
+    environment:
+      PASSWORD: "1234"
+    volumes:
+      - ./vscode:/home/coder/project
+    entrypoint: ["sh","-c","sudo apt update && sudo apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev && wget https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz && tar -xvf Python-3.10.0.tgz && cd Python-3.10.0 && sudo ./configure --enable-optimizations && sudo make -j 2 && sudo make altinstall&&/usr/bin/entrypoint.sh --bind-addr 0.0.0.0:8080"]
+volumes:
+  pgdata:
+    driver: local
+
