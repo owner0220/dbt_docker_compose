@@ -29,8 +29,9 @@ services:
   db:
     image: postgres:13
     container_name: dbt_postgres
-    user: "1001"
+    #user: "1001"
     environment:
+      COMPOSE_CONVERT_WINDOWS_PATHS: 1
       POSTGRES_USER: admin 
       POSTGRES_PASSWORD: Admin1234
       POSTGRES_DB: ecommerce
@@ -47,7 +48,7 @@ services:
       timeout: 10s
 
   create-db:
-    image: alpine:3.20.2
+    image: owner0220/dbt_session_devenv_init_db:v1.0.0 
     container_name: init_db
     depends_on:
       db:
@@ -57,7 +58,7 @@ services:
     volumes:
       - ./sql:/home
     command: >
-      sh -c "apk add postgresql&&psql -h db -d ecommerce -U admin -p 5432 -a -q -f /home/sample_data.sql"
+      sh -c "apk add postgresql&&psql -h db -d ecommerce -U admin -p 5432 -a -q -f /home/sample_data.sql&& sleep 3000 "
 
   vscode:
     image: owner0220/dbt_session_devenv_code:v1.0.0 
