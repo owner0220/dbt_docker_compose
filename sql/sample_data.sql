@@ -1,4 +1,4 @@
-create schema src;
+create schema if not exists src;
 
 DROP TABLE IF EXISTS src.customer;
 CREATE TABLE src.customer (
