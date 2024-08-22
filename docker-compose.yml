@@ -41,7 +41,7 @@ services:
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d ecommerce"] 
+      test: ["CMD-SHELL", "pg_isready -U admin -d postgres"] 
       interval: 10s
       retries: 5
       start_period: 30s
@@ -61,7 +61,7 @@ services:
       sh -c "apk add postgresql&&psql -h db -d ecommerce -U admin -p 5432 -a -q -f /home/sample_data.sql&& sleep 3000 "
 
   vscode:
-    image: owner0220/dbt_session_devenv_code:v1.0.0 
+    image: owner0220/dbt_session_devenv_code:v1.0.1 
     container_name: vscode-server
     ports:
       - "8443:8080"
@@ -70,7 +70,7 @@ services:
       PASSWORD: "1234"
     volumes:
       - ./vscode:/home/coder/project
-    entrypoint: ["sh","-c","git clone https://github.com/color275/new_datalake.git /home/coder/project&&/usr/bin/entrypoint.sh --bind-addr 0.0.0.0:8080"]
+    entrypoint: ["sh","-c","[ ! -d '/home/coder/project/dbt' ] &&git clone https://github.com/color275/new_datalake.git /home/coder/new_datalake&&mv /home/coder/new_datalake/local/dbt /home/coder/project/dbt&&mv /home/coder/.venv /home/coder/project/dbt/.venv && source /home/coder/project/dbt/.venv &&/usr/bin/entrypoint.sh --bind-addr 0.0.0.0:8080"]
   
 volumes:
   pgdata:
